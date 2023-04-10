@@ -13,7 +13,8 @@ class _AuthFormState extends State<AuthForm> {
   final _authFormData = AuthFormData();
 
   void _submit() {
-    _formKey.currentState?.validate();
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) return;
   }
 
   @override
@@ -32,12 +33,28 @@ class _AuthFormState extends State<AuthForm> {
                   initialValue: _authFormData.name,
                   onChanged: (name) => _authFormData.name = name,
                   decoration: const InputDecoration(labelText: 'Name'),
+                  validator: (_name) {
+                    final name = _name ?? '';
+                    if (name.trim().length < 5) {
+                      return 'You must have at least 5 characters.';
+                    } else {
+                      return null;
+                    }
+                  },
                 ),
               TextFormField(
                 key: const ValueKey('E-mail'),
                 initialValue: _authFormData.email,
                 onChanged: (email) => _authFormData.email = email,
                 decoration: const InputDecoration(labelText: 'E-mail'),
+                validator: (_email) {
+                  final email = _email ?? '';
+                  if (!email.contains('@')) {
+                    return 'Invalid e-mail.';
+                  } else {
+                    return null;
+                  }
+                },
               ),
               TextFormField(
                 key: const ValueKey('Password'),
@@ -45,6 +62,14 @@ class _AuthFormState extends State<AuthForm> {
                 onChanged: (password) => _authFormData.password = password,
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Password'),
+                validator: (_password) {
+                  final password = _password ?? '';
+                  if (password.length < 6) {
+                    return 'Password must have at least 6 characters.';
+                  } else {
+                    return null;
+                  }
+                },
               ),
               const SizedBox(height: 15),
               Row(
