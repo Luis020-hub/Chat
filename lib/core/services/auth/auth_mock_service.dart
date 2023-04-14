@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_fields, annotate_overrides
+
 import 'dart:io';
 import 'dart:async';
 import 'dart:math';
@@ -27,13 +29,13 @@ class AuthMockService implements AuthService {
     String name,
     String email,
     String password,
-    File image,
+    File? image,
   ) async {
     final newUser = ChatUser(
       id: Random().nextDouble().toString(),
       name: name,
       email: email,
-      imageURL: image.path,
+      imageURL: image?.path ?? '/assets/images...',
     );
 
     _users.putIfAbsent(email, () => newUser);
