@@ -34,7 +34,7 @@ class Messages extends StatelessWidget {
           );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(
-            child: Text("Without conversation. Let's talk? :D "),
+            child: Text("No data. Let's talk? :D "),
           );
         } else {
           final msgs = snapshot.data!;
