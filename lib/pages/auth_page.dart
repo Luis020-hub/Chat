@@ -62,10 +62,10 @@ class _AuthPageState extends State<AuthPage> {
                   lineWidth: 8.0,
                   percent: 1.0,
                   center: const Text(
-                    "100%",
+                    "Loading...",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 18,
                     ),
                   ),
                   progressColor: Colors.white,
