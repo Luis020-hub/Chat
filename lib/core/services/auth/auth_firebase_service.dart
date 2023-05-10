@@ -4,6 +4,7 @@ import 'package:chat/core/models/chat_user.dart';
 import 'package:chat/core/services/auth/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class AuthFirebaseService implements AuthService {
@@ -33,24 +34,50 @@ class AuthFirebaseService implements AuthService {
     String password,
     File? image,
   ) async {
-    final auth = FirebaseAuth.instance;
+    FirebaseApp tempApp = await Firebase.initializeApp(
+      name: 'temporaryRegister',
+      options: Firebase.app().options,
+    );
+
+    final tempAuth = await FirebaseAuth.instanceFor(
+      app: tempApp,
+    ).createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+
+    
+    final signup = await Firebase.initializeApp(
+      name: 'userSignup',
+      options: Firebase.app().options,
+    );
+
+    final auth = FirebaseAuth.instanceFor(app: signup);
+
     UserCredential credential = await auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    if (credential.user == null) return;
+    if (credential.user != null) {
+      // 1. Upload da foto do usuário.
+      final imageName = '${credential.user!.uid}.jpg';
+      final imageURL = await _uploadUserImage(image, imageName);
 
-    // 1. Upload da foto do usuário.
-    final imageName = '${credential.user!.uid}.jpg';
-    final imageURL = await _uploadUserImage(image, imageName);
+      // 2. atualizar os atributos do usuário.
+      await credential.user?.updateDisplayName(name);
+      await credential.user?.updatePhotoURL(imageURL);
 
-    // 2. atualizar os atributos do usuário.
-    await credential.user?.updateDisplayName(name);
-    await credential.user?.updatePhotoURL(imageURL);
+      // 2.5 fazer o login do usuário
+      await login(email, password);
 
-    // 3. Salvando o usuario no banco de dados.
-    await _saveChatUser(_toChatUser(credential.user!, imageURL));
+      // 3. Salvando o usuario no banco de dados.
+      _currentUser = _toChatUser(credential.user!, name, imageURL);
+      await _saveChatUser(_currentUser!);
+    }
+
+    await signup.delete();
   }
 
   @override
@@ -79,17 +106,17 @@ class AuthFirebaseService implements AuthService {
     final store = FirebaseFirestore.instance;
     final docRef = store.collection('users').doc(user.id);
 
-    await docRef.set({
+    return docRef.set({
       'name': user.name,
       'email': user.email,
       'imageUrl': user.imageUrl,
     });
   }
 
-  static ChatUser _toChatUser(User user, [String? imageUrl]) {
+  static ChatUser _toChatUser(User user, [String? name, String? imageUrl]) {
     return ChatUser(
       id: user.uid,
-      name: user.displayName ?? user.email!.split('@')[0],
+      name: name ?? user.displayName ?? user.email!.split('@')[0],
       email: user.email!,
       imageUrl: imageUrl ?? user.photoURL ?? 'assets/images/avatar.png',
     );
