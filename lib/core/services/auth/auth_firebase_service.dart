@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'dart:io';
 import 'dart:async';
 import 'package:chat/core/models/chat_user.dart';
