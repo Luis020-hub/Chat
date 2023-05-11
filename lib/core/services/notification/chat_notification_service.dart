@@ -6,7 +6,7 @@ class ChatNotificationService with ChangeNotifier {
   final List<ChatNotification> _items = [];
 
   int get itemsCount {
-    return items.length;
+    return _items.length;
   }
 
   List<ChatNotification> get items {
@@ -24,7 +24,9 @@ class ChatNotificationService with ChangeNotifier {
   }
 
   Future<void> init() async {
+    await _configureTerminated();
     await _configureForeground();
+    await _configureBackground();
   }
 
   Future<bool> get _isAuthorized async {
@@ -35,15 +37,30 @@ class ChatNotificationService with ChangeNotifier {
 
   Future<void> _configureForeground() async {
     if (await _isAuthorized) {
-      FirebaseMessaging.onMessage.listen((msg) {
-        if (msg.notification == null) return;
-        add(
-          ChatNotification(
-            tittle: msg.notification!.title ?? 'Not informed',
-            body: msg.notification!.body ?? 'Not informed',
-          ),
-        );
-      });
+      FirebaseMessaging.onMessage.listen(_messageHandler);
     }
+  }
+
+  Future<void> _configureBackground() async {
+    if (await _isAuthorized) {
+      FirebaseMessaging.onMessageOpenedApp.listen(_messageHandler);
+    }
+  }
+
+  Future<void> _configureTerminated() async {
+    if (await _isAuthorized) {
+      RemoteMessage? initialMsg =
+          await FirebaseMessaging.instance.getInitialMessage();
+      _messageHandler(initialMsg);
+    }
+  }
+
+  void _messageHandler(RemoteMessage? msg) {
+    if (msg == null || msg.notification == null) return;
+
+    add(ChatNotification(
+      title: msg.notification!.title ?? 'Not informed!',
+      body: msg.notification!.body ?? 'Not informed!',
+    ));
   }
 }
